@@ -13,7 +13,7 @@ class User(Base):
     name = Column(String)
     email = Column(String, unique=True)
 
-    orders = relationship("Order", back_populates="user")
+    orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
 
 class Product(Base):
     __tablename__ = 'products'
@@ -53,10 +53,22 @@ for name, price in [('Laptop', 1000), ('Smartphone', 500), ('Headphones', 150)]:
         pass
 session.commit()
 
-session.add(Order(user_id=1, product_id=1, quantity=1))
-session.add(Order(user_id=1, product_id=2, quantity=2))
-session.add(Order(user_id=2, product_id=2, quantity=1))
-session.add(Order(user_id=2, product_id=3, quantity=2))
+#orders items queried from the database to ensure they exist before creating orders
+alice = session.query(User).filter_by(email="alice@example.com").one()
+bob = session.query(User).filter_by(email="bob@example.com").one()
+
+laptop = session.query(Product).filter_by(name="Laptop").one()
+phone = session.query(Product).filter_by(name="Smartphone").one()
+headphones = session.query(Product).filter_by(name="Headphones").one()
+
+
+order1 = Order(user=alice, product=laptop, quantity=1)
+order2 = Order(user=alice, product=phone, quantity=2)
+order3 = Order(user=bob, product=headphones, quantity=1)
+order4 = Order(user=bob, product=phone, quantity=1)
+
+session.add_all([order1, order2, order3, order4])
+session.commit()
 
 
 def get_user_info(user_id):
